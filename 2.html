@@ -1,0 +1,1054 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Themed Word Search Generator</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    :root {
+      --primary: #4f46e5;
+      --primary-light: #eef2ff;
+      --accent: #f97316;
+      --bg: #0f172a;
+      --card: #111827;
+      --text: #e5e7eb;
+      --muted: #9ca3af;
+      --border: #1f2937;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: radial-gradient(circle at top, #1d283a, #020617);
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      padding: 20px;
+    }
+
+    .app {
+      width: 100%;
+      max-width: 1100px;
+      background: linear-gradient(135deg, rgba(15,23,42,0.98), rgba(15,23,42,0.9));
+      border-radius: 18px;
+      border: 1px solid rgba(148,163,184,0.2);
+      box-shadow: 0 25px 60px rgba(15,23,42,0.9);
+      padding: 22px 20px 26px;
+    }
+
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 18px;
+      flex-wrap: wrap;
+    }
+
+    .title-block {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .logo {
+      width: 40px;
+      height: 40px;
+      border-radius: 12px;
+      background: radial-gradient(circle at 30% 20%, #f97316, #4f46e5);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 800;
+      color: white;
+      font-size: 20px;
+      box-shadow: 0 10px 25px rgba(79,70,229,0.7);
+    }
+
+    h1 {
+      margin: 0;
+      font-size: 22px;
+      letter-spacing: 0.03em;
+    }
+
+    .subtitle {
+      font-size: 12px;
+      color: var(--muted);
+    }
+
+    .badge {
+      padding: 6px 10px;
+      border-radius: 999px;
+      background: rgba(79,70,229,0.12);
+      color: #c7d2fe;
+      font-size: 11px;
+      border: 1px solid rgba(129,140,248,0.4);
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      white-space: nowrap;
+    }
+
+    .badge span.dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 999px;
+      background: #22c55e;
+      box-shadow: 0 0 0 4px rgba(34,197,94,0.25);
+    }
+
+    .layout {
+      display: grid;
+      grid-template-columns: minmax(0, 1.1fr) minmax(0, 1.1fr);
+      gap: 18px;
+    }
+
+    @media (max-width: 800px) {
+      .layout {
+        grid-template-columns: 1fr;
+      }
+      .app {
+        padding: 16px 14px 20px;
+      }
+    }
+
+    .panel {
+      background: radial-gradient(circle at top left, rgba(30,64,175,0.35), rgba(15,23,42,0.95));
+      border-radius: 16px;
+      padding: 14px 14px 16px;
+      border: 1px solid rgba(55,65,81,0.9);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .panel::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(circle at top right, rgba(79,70,229,0.18), transparent 55%);
+      opacity: 0.9;
+      pointer-events: none;
+    }
+
+    .panel-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      margin-bottom: 10px;
+      gap: 8px;
+      position: relative;
+      z-index: 1;
+    }
+
+    .panel-title {
+      font-size: 14px;
+      font-weight: 600;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      color: #e5e7eb;
+    }
+
+    .panel-sub {
+      font-size: 11px;
+      color: var(--muted);
+    }
+
+    label {
+      font-size: 12px;
+      font-weight: 500;
+      color: #e5e7eb;
+      margin-bottom: 4px;
+      display: block;
+    }
+
+    .field {
+      margin-bottom: 10px;
+      position: relative;
+      z-index: 1;
+    }
+
+    input, textarea, select {
+      width: 100%;
+      padding: 8px 9px;
+      border-radius: 10px;
+      border: 1px solid rgba(55,65,81,0.9);
+      background: rgba(15,23,42,0.9);
+      color: var(--text);
+      font-size: 13px;
+      outline: none;
+      transition: border 0.15s, box-shadow 0.15s, background 0.15s;
+    }
+
+    input:focus, textarea:focus, select:focus {
+      border-color: rgba(129,140,248,0.9);
+      box-shadow: 0 0 0 1px rgba(129,140,248,0.7);
+      background: rgba(15,23,42,0.98);
+    }
+
+    textarea {
+      min-height: 90px;
+      resize: vertical;
+      line-height: 1.4;
+    }
+
+    .inline-fields {
+      display: flex;
+      gap: 8px;
+    }
+
+    .inline-fields .field {
+      flex: 1;
+      margin-bottom: 0;
+    }
+
+    @media (max-width: 600px) {
+      .inline-fields {
+        flex-direction: column;
+      }
+    }
+
+    .pill-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-top: 4px;
+    }
+
+    .pill {
+      font-size: 11px;
+      padding: 4px 8px;
+      border-radius: 999px;
+      border: 1px solid rgba(75,85,99,0.9);
+      color: var(--muted);
+    }
+
+    .buttons {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 6px;
+      position: relative;
+      z-index: 1;
+    }
+
+    button {
+      border: none;
+      border-radius: 999px;
+      padding: 8px 14px;
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      transition: transform 0.12s ease, box-shadow 0.12s ease, background 0.12s ease;
+      white-space: nowrap;
+    }
+
+    button:active {
+      transform: translateY(1px) scale(0.99);
+      box-shadow: none;
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, #4f46e5, #6366f1);
+      color: white;
+      box-shadow: 0 10px 25px rgba(79,70,229,0.7);
+    }
+
+    .btn-primary:hover {
+      background: linear-gradient(135deg, #4338ca, #4f46e5);
+    }
+
+    .btn-secondary {
+      background: rgba(15,23,42,0.9);
+      color: #e5e7eb;
+      border: 1px solid rgba(75,85,99,0.9);
+    }
+
+    .btn-secondary:hover {
+      background: rgba(31,41,55,0.95);
+    }
+
+    .btn-ghost {
+      background: transparent;
+      color: var(--muted);
+      border: 1px dashed rgba(75,85,99,0.9);
+    }
+
+    .btn-toggle-on {
+      background: rgba(34,197,94,0.12);
+      border-color: rgba(34,197,94,0.7);
+      color: #bbf7d0;
+    }
+
+    .theme-preview {
+      font-size: 13px;
+      color: var(--muted);
+      margin-top: 4px;
+    }
+
+    .theme-preview span {
+      color: #e5e7eb;
+      font-weight: 500;
+    }
+
+    .grid-wrapper {
+      margin-top: 6px;
+      border-radius: 14px;
+      background: radial-gradient(circle at top, rgba(15,23,42,0.9), rgba(15,23,42,0.98));
+      border: 1px solid rgba(55,65,81,0.9);
+      padding: 10px;
+      overflow-x: auto;
+      position: relative;
+      z-index: 1;
+    }
+
+    #grid {
+      border-collapse: collapse;
+      margin: 0 auto;
+    }
+
+    #grid td {
+      width: 26px;
+      height: 26px;
+      text-align: center;
+      border: 1px solid rgba(55,65,81,0.9);
+      font-weight: 600;
+      font-size: 15px;
+      font-family: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+      color: #e5e7eb;
+      background: radial-gradient(circle at center, rgba(30,64,175,0.35), rgba(15,23,42,0.95));
+    }
+
+    #grid td.solution {
+      background: rgba(248,250,252,0.18);
+      color: #f97316;
+    }
+
+    .word-list {
+      margin-top: 10px;
+      font-size: 12px;
+      color: var(--muted);
+      position: relative;
+      z-index: 1;
+    }
+
+    .word-list strong {
+      color: #e5e7eb;
+      font-weight: 600;
+    }
+
+    .chip-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-top: 4px;
+    }
+
+    .chip {
+      padding: 4px 8px;
+      border-radius: 999px;
+      background: rgba(15,23,42,0.9);
+      border: 1px solid rgba(55,65,81,0.9);
+      font-size: 11px;
+      color: var(--muted);
+    }
+
+    .difficulty-row {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+      margin-top: 4px;
+    }
+
+    .difficulty-btn {
+      flex: 1;
+      justify-content: center;
+      padding: 6px 8px;
+      font-size: 11px;
+      border-radius: 999px;
+      border: 1px solid rgba(75,85,99,0.9);
+      background: rgba(15,23,42,0.9);
+      color: var(--muted);
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      transition: background 0.12s, border 0.12s, color 0.12s;
+    }
+
+    .difficulty-btn span.dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 999px;
+      background: rgba(148,163,184,0.9);
+    }
+
+    .difficulty-btn.active {
+      border-color: rgba(129,140,248,0.9);
+      background: rgba(30,64,175,0.9);
+      color: #e5e7eb;
+    }
+
+    .difficulty-btn.active span.dot {
+      background: #22c55e;
+    }
+
+    .meta-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 8px;
+      margin-top: 8px;
+      font-size: 11px;
+      color: var(--muted);
+      flex-wrap: wrap;
+    }
+
+    .meta-row span.label {
+      color: #e5e7eb;
+      font-weight: 500;
+    }
+
+    .meta-row .right {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+
+    .tag {
+      padding: 3px 7px;
+      border-radius: 999px;
+      border: 1px solid rgba(55,65,81,0.9);
+      font-size: 10px;
+      color: var(--muted);
+    }
+
+    .hint {
+      font-size: 11px;
+      color: var(--muted);
+      margin-top: 4px;
+    }
+
+    .hint strong {
+      color: #e5e7eb;
+    }
+
+    .status {
+      font-size: 11px;
+      color: var(--muted);
+      margin-top: 6px;
+    }
+
+    .status span.ok {
+      color: #22c55e;
+    }
+
+    .status span.warn {
+      color: #f97316;
+    }
+
+    .status span.err {
+      color: #f97373;
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <header>
+      <div class="title-block">
+        <div class="logo">WS</div>
+        <div>
+          <h1>Themed Word Search Studio</h1>
+          <div class="subtitle">Create beautiful, printable word search puzzles with difficulty levels and solutions.</div>
+        </div>
+      </div>
+      <div class="badge">
+        <span class="dot"></span>
+        Live puzzle generator · PDF + solution
+      </div>
+    </header>
+
+    <div class="layout">
+      <!-- LEFT: Controls -->
+      <div class="panel">
+        <div class="panel-header">
+          <div>
+            <div class="panel-title">Puzzle setup</div>
+            <div class="panel-sub">Theme, words, grid size & difficulty</div>
+          </div>
+        </div>
+
+        <div class="field">
+          <label for="theme">Theme / Title</label>
+          <input id="theme" type="text" placeholder="e.g. Animals, Fruits, Ramadan, Space Adventure..." />
+          <div class="theme-preview">Preview title: <span id="theme-preview-text">Word Search</span></div>
+        </div>
+
+        <div class="field">
+          <label for="words">Words (one per line)</label>
+          <textarea id="words" placeholder="CAT&#10;DOG&#10;LION&#10;ELEPHANT"></textarea>
+          <div class="pill-row">
+            <div class="pill">Tip: Use UPPERCASE or lowercase, both work.</div>
+            <div class="pill">Longer words = more challenging puzzle.</div>
+          </div>
+        </div>
+
+        <div class="inline-fields">
+          <div class="field">
+            <label for="rows">Rows</label>
+            <input id="rows" type="number" min="5" max="30" value="12" />
+          </div>
+          <div class="field">
+            <label for="cols">Columns</label>
+            <input id="cols" type="number" min="5" max="30" value="12" />
+          </div>
+        </div>
+
+        <div class="field">
+          <label>Difficulty</label>
+          <div class="difficulty-row">
+            <button type="button" class="difficulty-btn active" data-level="easy">
+              <span class="dot"></span> Easy
+            </button>
+            <button type="button" class="difficulty-btn" data-level="medium">
+              <span class="dot"></span> Medium
+            </button>
+            <button type="button" class="difficulty-btn" data-level="hard">
+              <span class="dot"></span> Hard
+            </button>
+          </div>
+          <div class="hint" id="difficulty-hint">
+            <strong>Easy:</strong> Horizontal + vertical, no backwards, fewer diagonals.
+          </div>
+        </div>
+
+        <div class="field">
+          <label for="direction">Directions allowed</label>
+          <select id="direction">
+            <option value="basic">Auto (based on difficulty)</option>
+            <option value="hv">Horizontal + Vertical only</option>
+            <option value="hvdiag">Horizontal + Vertical + Diagonal</option>
+            <option value="all">All directions (including backwards)</option>
+          </select>
+          <div class="hint">
+            For full challenge, choose <strong>All directions</strong> or set difficulty to <strong>Hard</strong>.
+          </div>
+        </div>
+
+        <div class="buttons">
+          <button id="generateBtn" class="btn-primary">
+            Generate puzzle
+          </button>
+          <button id="downloadBtn" class="btn-secondary">
+            Download PDF + solution
+          </button>
+          <button id="showAnswerBtn" class="btn-ghost">
+            Show answer
+          </button>
+          <button id="clearBtn" class="btn-ghost">
+            Clear words
+          </button>
+        </div>
+
+        <div class="status" id="status-text"></div>
+      </div>
+
+      <!-- RIGHT: Puzzle preview -->
+      <div class="panel">
+        <div class="panel-header">
+          <div>
+            <div class="panel-title">Puzzle preview</div>
+            <div class="panel-sub">Live grid + word list</div>
+          </div>
+          <div class="tag">Mobile-friendly · Printable layout</div>
+        </div>
+
+        <div class="meta-row">
+          <div>
+            <span class="label">Current title:</span>
+            <span id="theme-display">Word Search</span>
+          </div>
+          <div class="right">
+            <span class="tag" id="meta-size">Grid: –</span>
+            <span class="tag" id="meta-words">Words: –</span>
+          </div>
+        </div>
+
+        <div class="grid-wrapper">
+          <table id="grid"></table>
+        </div>
+
+        <div class="word-list" id="word-list"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- jsPDF CDN -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
+  <script>
+    // ---------- Utility ----------
+    function randomInt(max) {
+      return Math.floor(Math.random() * max);
+    }
+
+    function createEmptyGrid(rows, cols) {
+      const grid = [];
+      for (let r = 0; r < rows; r++) {
+        const row = [];
+        for (let c = 0; c < cols; c++) {
+          row.push('');
+        }
+        grid.push(row);
+      }
+      return grid;
+    }
+
+    // ---------- Directions ----------
+    const ALL_DIRECTIONS = [
+      [0, 1],   // right
+      [0, -1],  // left
+      [1, 0],   // down
+      [-1, 0],  // up
+      [1, 1],   // down-right
+      [1, -1],  // down-left
+      [-1, 1],  // up-right
+      [-1, -1]  // up-left
+    ];
+
+    function getDirectionsForMode(directionMode, difficulty) {
+      let dirs = [];
+
+      if (directionMode === 'hv') {
+        dirs = [
+          [0, 1], [0, -1],
+          [1, 0], [-1, 0]
+        ];
+      } else if (directionMode === 'hvdiag') {
+        dirs = [
+          [0, 1], [0, -1],
+          [1, 0], [-1, 0],
+          [1, 1], [1, -1],
+          [-1, 1], [-1, -1]
+        ];
+      } else if (directionMode === 'all') {
+        dirs = ALL_DIRECTIONS.slice();
+      } else {
+        // Auto based on difficulty
+        if (difficulty === 'easy') {
+          dirs = [
+            [0, 1], [1, 0] // right, down
+          ];
+        } else if (difficulty === 'medium') {
+          dirs = [
+            [0, 1], [1, 0],
+            [1, 1], [1, -1] // diagonals down
+          ];
+        } else {
+          dirs = ALL_DIRECTIONS.slice();
+        }
+      }
+
+      return dirs;
+    }
+
+    // ---------- Word placement ----------
+    function canPlaceWord(grid, word, row, col, dr, dc) {
+      const rows = grid.length;
+      const cols = grid[0].length;
+      for (let i = 0; i < word.length; i++) {
+        const r = row + dr * i;
+        const c = col + dc * i;
+        if (r < 0 || r >= rows || c < 0 || c >= cols) return false;
+        if (grid[r][c] !== '' && grid[r][c] !== word[i]) return false;
+      }
+      return true;
+    }
+
+    function placeWord(grid, word, row, col, dr, dc, placements) {
+      const cells = [];
+      for (let i = 0; i < word.length; i++) {
+        const r = row + dr * i;
+        const c = col + dc * i;
+        grid[r][c] = word[i];
+        cells.push({ r, c });
+      }
+      placements.push({ word, cells });
+    }
+
+    function fillEmptyWithRandomLetters(grid) {
+      const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+      for (let r = 0; r < grid.length; r++) {
+        for (let c = 0; c < grid[0].length; c++) {
+          if (grid[r][c] === '') {
+            grid[r][c] = letters[randomInt(letters.length)];
+          }
+        }
+      }
+    }
+
+    function generateWordSearch(words, rows, cols, directionMode, difficulty) {
+      const grid = createEmptyGrid(rows, cols);
+      const placements = [];
+      const directions = getDirectionsForMode(directionMode, difficulty);
+
+      const sortedWords = words.slice().sort((a, b) => b.length - a.length);
+
+      for (const word of sortedWords) {
+        let placed = false;
+        for (let attempt = 0; attempt < 300 && !placed; attempt++) {
+          const [dr, dc] = directions[randomInt(directions.length)];
+          const row = randomInt(rows);
+          const col = randomInt(cols);
+          if (canPlaceWord(grid, word, row, col, dr, dc)) {
+            placeWord(grid, word, row, col, dr, dc, placements);
+            placed = true;
+          }
+        }
+      }
+
+      fillEmptyWithRandomLetters(grid);
+      return { grid, placements };
+    }
+
+    // ---------- Rendering ----------
+    function renderGrid(grid, placements, showSolution) {
+      const table = document.getElementById('grid');
+      table.innerHTML = '';
+
+      const solutionMap = {};
+      if (showSolution && placements) {
+        placements.forEach(p => {
+          p.cells.forEach(cell => {
+            solutionMap[cell.r + '-' + cell.c] = true;
+          });
+        });
+      }
+
+      for (let r = 0; r < grid.length; r++) {
+        const tr = document.createElement('tr');
+        for (let c = 0; c < grid[0].length; c++) {
+          const td = document.createElement('td');
+          td.textContent = grid[r][c];
+          if (solutionMap[r + '-' + c]) {
+            td.classList.add('solution');
+          }
+          tr.appendChild(td);
+        }
+        table.appendChild(tr);
+      }
+    }
+
+    function renderWordList(words) {
+      const div = document.getElementById('word-list');
+      if (!words.length) {
+        div.textContent = '';
+        return;
+      }
+      div.innerHTML = '<strong>Words:</strong>';
+      const row = document.createElement('div');
+      row.className = 'chip-row';
+      words.forEach(w => {
+        const chip = document.createElement('div');
+        chip.className = 'chip';
+        chip.textContent = w;
+        row.appendChild(chip);
+      });
+      div.appendChild(row);
+    }
+
+    function updateMeta(rows, cols, wordsCount) {
+      document.getElementById('meta-size').textContent = 'Grid: ' + rows + ' × ' + cols;
+      document.getElementById('meta-words').textContent = 'Words: ' + wordsCount;
+    }
+
+    function setStatus(message, type) {
+      const el = document.getElementById('status-text');
+      el.innerHTML = message;
+      el.className = 'status';
+      if (type === 'ok') el.innerHTML = '<span class="ok">✓</span> ' + message;
+      if (type === 'warn') el.innerHTML = '<span class="warn">!</span> ' + message;
+      if (type === 'err') el.innerHTML = '<span class="err">✕</span> ' + message;
+    }
+
+    // ---------- Difficulty UI ----------
+    let currentDifficulty = 'easy';
+
+    function updateDifficultyHint() {
+      const hint = document.getElementById('difficulty-hint');
+      if (currentDifficulty === 'easy') {
+        hint.innerHTML = '<strong>Easy:</strong> Horizontal + vertical, no backwards, minimal diagonals.';
+      } else if (currentDifficulty === 'medium') {
+        hint.innerHTML = '<strong>Medium:</strong> Horizontal, vertical + some diagonals. No full backwards chaos.';
+      } else {
+        hint.innerHTML = '<strong>Hard:</strong> All directions, including backwards + diagonals. Maximum challenge.';
+      }
+    }
+
+    document.querySelectorAll('.difficulty-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.difficulty-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        currentDifficulty = btn.getAttribute('data-level');
+        updateDifficultyHint();
+      });
+    });
+
+    // ---------- Theme live preview ----------
+    const themeInput = document.getElementById('theme');
+    const themePreview = document.getElementById('theme-preview-text');
+    const themeDisplay = document.getElementById('theme-display');
+
+    themeInput.addEventListener('input', () => {
+      const t = themeInput.value.trim();
+      const val = t || 'Word Search';
+      themePreview.textContent = val;
+      themeDisplay.textContent = val;
+      window.currentTheme = val;
+    });
+
+    // ---------- Global state ----------
+    window.currentGrid = null;
+    window.currentWords = [];
+    window.currentTheme = 'Word Search';
+    window.currentPlacements = [];
+    let showSolutionOnScreen = false;
+
+    // ---------- Generate button ----------
+    document.getElementById('generateBtn').addEventListener('click', () => {
+      const theme = themeInput.value.trim();
+      const wordsRaw = document.getElementById('words').value;
+      let rows = parseInt(document.getElementById('rows').value, 10);
+      let cols = parseInt(document.getElementById('cols').value, 10);
+      const directionMode = document.getElementById('direction').value;
+
+      let words = wordsRaw
+        .split('\n')
+        .map(w => w.trim())
+        .filter(w => w.length > 0)
+        .map(w => w.toUpperCase());
+
+      if (!words.length) {
+        setStatus('Please add at least one word.', 'err');
+        alert('Please add at least one word.');
+        return;
+      }
+
+      const maxWord = Math.max(...words.map(w => w.length));
+
+      if (currentDifficulty === 'medium') {
+        rows = Math.max(rows, maxWord + 2);
+        cols = Math.max(cols, maxWord + 2);
+      } else if (currentDifficulty === 'hard') {
+        rows = Math.max(rows, maxWord + 4);
+        cols = Math.max(cols, maxWord + 4);
+      }
+
+      if (maxWord > rows || maxWord > cols) {
+        setStatus('Grid is too small for the longest word. Increase rows/cols.', 'err');
+        alert('Grid is too small for the longest word. Increase rows/cols.');
+        return;
+      }
+
+      document.getElementById('rows').value = rows;
+      document.getElementById('cols').value = cols;
+
+      const { grid, placements } = generateWordSearch(words, rows, cols, directionMode, currentDifficulty);
+
+      window.currentGrid = grid;
+      window.currentWords = words;
+      window.currentTheme = theme || 'Word Search';
+      window.currentPlacements = placements;
+      showSolutionOnScreen = false;
+      document.getElementById('showAnswerBtn').classList.remove('btn-toggle-on');
+      document.getElementById('showAnswerBtn').textContent = 'Show answer';
+
+      themeDisplay.textContent = window.currentTheme;
+      renderGrid(grid, placements, false);
+      renderWordList(words);
+      updateMeta(rows, cols, words.length);
+
+      if (placements.length < words.length) {
+        setStatus('Puzzle generated, but some words could not be placed (grid too dense).', 'warn');
+      } else {
+        setStatus('Puzzle generated successfully.', 'ok');
+      }
+    });
+
+    // ---------- Clear button ----------
+    document.getElementById('clearBtn').addEventListener('click', () => {
+      document.getElementById('words').value = '';
+      window.currentWords = [];
+      renderWordList([]);
+      setStatus('Word list cleared.', 'ok');
+    });
+
+    // ---------- Show Answer button (on-screen) ----------
+    document.getElementById('showAnswerBtn').addEventListener('click', () => {
+      if (!window.currentGrid) {
+        setStatus('Generate a puzzle before showing the answer.', 'err');
+        alert('Please generate a puzzle first.');
+        return;
+      }
+      showSolutionOnScreen = !showSolutionOnScreen;
+      renderGrid(window.currentGrid, window.currentPlacements, showSolutionOnScreen);
+
+      const btn = document.getElementById('showAnswerBtn');
+      if (showSolutionOnScreen) {
+        btn.classList.add('btn-toggle-on');
+        btn.textContent = 'Hide answer';
+      } else {
+        btn.classList.remove('btn-toggle-on');
+        btn.textContent = 'Show answer';
+      }
+    });
+
+    // ---------- PDF download (puzzle + solution) ----------
+    document.getElementById('downloadBtn').addEventListener('click', () => {
+      if (!window.currentGrid) {
+        setStatus('Generate a puzzle before downloading.', 'err');
+        alert('Please generate a puzzle first.');
+        return;
+      }
+
+      const { jsPDF } = window.jspdf;
+      const doc = new jsPDF({
+        orientation: 'portrait',
+        unit: 'pt',
+        format: 'a4'
+      });
+
+      const margin = 40;
+      const cellSize = 18;
+      const grid = window.currentGrid;
+      const placements = window.currentPlacements || [];
+      const words = window.currentWords || [];
+      const theme = window.currentTheme || 'Word Search';
+
+      function drawGrid(doc, grid, highlightPlacements, startY) {
+        let x, y;
+        y = startY;
+        const solutionMap = {};
+        if (highlightPlacements) {
+          placements.forEach(p => {
+            p.cells.forEach(cell => {
+              solutionMap[cell.r + '-' + cell.c] = true;
+            });
+          });
+        }
+
+        doc.setFont('courier', 'bold');
+        doc.setFontSize(10);
+
+        for (let r = 0; r < grid.length; r++) {
+          x = margin;
+          for (let c = 0; c < grid[0].length; c++) {
+            const key = r + '-' + c;
+            if (solutionMap[key]) {
+              doc.setTextColor(249, 115, 22);
+            } else {
+              doc.setTextColor(15, 23, 42);
+            }
+            doc.text(grid[r][c], x, y);
+            x += cellSize;
+          }
+          y += cellSize;
+        }
+        doc.setTextColor(15, 23, 42);
+        return y;
+      }
+
+      // PAGE 1: Puzzle
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(20);
+      doc.text(theme, margin, margin + 10);
+
+      doc.setFontSize(11);
+      doc.setFont('helvetica', 'normal');
+      doc.text('Word Search Puzzle', margin, margin + 30);
+
+      let y = margin + 60;
+      y = drawGrid(doc, grid, false, y);
+
+      y += 25;
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(12);
+      doc.text('Words:', margin, y);
+      y += 18;
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(10);
+
+      const lineHeight = 14;
+      const maxWidth = 500;
+      let line = '';
+
+      for (let i = 0; i < words.length; i++) {
+        const testLine = line ? line + ', ' + words[i] : words[i];
+        const testWidth = doc.getTextWidth(testLine);
+        if (testWidth > maxWidth) {
+          doc.text(line, margin, y);
+          y += lineHeight;
+          line = words[i];
+        } else {
+          line = testLine;
+        }
+      }
+      if (line) {
+        doc.text(line, margin, y);
+      }
+
+      // PAGE 2: Solution
+      doc.addPage();
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(20);
+      doc.text(theme + ' — Solution', margin, margin + 10);
+
+      doc.setFontSize(11);
+      doc.setFont('helvetica', 'normal');
+      doc.text('Highlighted letters show where each word is hidden.', margin, margin + 30);
+
+      y = margin + 60;
+      y = drawGrid(doc, grid, true, y);
+
+      y += 25;
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(12);
+      doc.text('Words:', margin, y);
+      y += 18;
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(10);
+
+      line = '';
+      for (let i = 0; i < words.length; i++) {
+        const testLine = line ? line + ', ' + words[i] : words[i];
+        const testWidth = doc.getTextWidth(testLine);
+        if (testWidth > maxWidth) {
+          doc.text(line, margin, y);
+          y += lineHeight;
+          line = words[i];
+        } else {
+          line = testLine;
+        }
+      }
+      if (line) {
+        doc.text(line, margin, y);
+      }
+
+      doc.save((theme || 'word-search') + '.pdf');
+      setStatus('PDF with puzzle + solution downloaded.', 'ok');
+    });
+
+    // Initial meta
+    updateMeta('–', '–', 0);
+  </script>
+</body>
+</html>
